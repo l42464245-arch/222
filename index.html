@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+                <style>.lw { font-size: 60px; font-family: Arial, Helvetica, sans-serif; }</style>
+            <style>
+      html, body { height: 100%; margin: 0; padding: 0; background: #000; overflow: hidden; }
+      #globe-container { width: 100%; height: 100%; }
+    </style><script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script><script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script><style>
+      #gl-infoBox{display:none;position:absolute;top:20px;left:20px;width:320px;max-height:calc(100vh - 40px);background:rgba(25,25,25,0.85);color:white;border:1px solid #444;border-radius:12px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.7);overflow-y:auto;z-index:100;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;transition:all 0.3s ease;}
+      #gl-infoBox img{width:100%;height:auto;border-radius:8px;margin-bottom:15px;border:1px solid #555;}
+      #gl-infoBox h3{margin-top:0;margin-bottom:15px;color:#ffb700;font-size:1.4em;}
+      #gl-infoBox h4{margin-top:20px;margin-bottom:5px;color:#888;border-bottom:1px solid #444;padding-bottom:5px;font-size:0.9em;text-transform:uppercase;letter-spacing:0.5px;}
+      #gl-infoBox p{margin-top:0;line-height:1.6;color:#ccc;}
+      #gl-closeButton, #gl-resetButton{position:absolute;width:30px;height:30px;background:rgba(0,0,0,0.5);color:white;border:1px solid #777;border-radius:50%;text-align:center;cursor:pointer;font-weight:700;font-size:16px;user-select:none;z-index:101;transition:all 0.2s ease;}
+      #gl-closeButton{top:15px;right:15px;line-height:28px;}
+      #gl-resetButton{top:20px; right: 20px; line-height:30px; font-size:18px;}
+      #gl-closeButton:hover, #gl-resetButton:hover{background:#ffb700;color:#000;transform:scale(1.1);}
+      #gl-title{position:absolute;top:20px;left:50%;transform:translateX(-50%);color:#fff;font-size:1.5em;font-weight:300;text-shadow:0 0 10px rgba(0,0,0,0.8);z-index:50;pointer-events:none;text-align:center;}
+      #gl-developer{position:absolute;bottom:15px;right:15px;font-size:0.8em;color:#aaa;z-index:50;}
+      @media (max-width: 500px) {
+        #gl-infoBox { width: calc(100% - 40px); left: 50%; top: auto; bottom: 20px; transform: translateX(-50%); max-height: 45vh; }
+        #gl-title { font-size: 1.1em; width: 90%; }
+        #gl-resetButton { top: auto; bottom: 20px; }
+        #gl-developer { font-size: 0.7em; bottom: 5px; right: 5px; }
+      }</style></head>
+            <body>
+                <script>(function installLiveweaveConsoleBridge() {
+        if (window.__liveweaveConsoleBridge) return;
+        window.__liveweaveConsoleBridge = true;
+
+        function format(value) {
+            if (typeof value === 'string') return value;
+            if (typeof value === 'undefined') return 'undefined';
+            if (typeof value === 'function') return value.toString();
+            if (value instanceof Error) return value.name + ': ' + value.message;
+            if (value instanceof Element) return value.outerHTML;
+            try {
+                var seen = [];
+                return JSON.stringify(value, function(key, item) {
+                    if (typeof item === 'object' && item !== null) {
+                        if (seen.indexOf(item) !== -1) return '[Circular]';
+                        seen.push(item);
+                    }
+                    return item;
+                }, 2);
+            } catch (err) {
+                return String(value);
+            }
+        }
+
+        function send(type, values, id) {
+            parent.postMessage({
+                source: 'liveweave-preview-console',
+                type: type,
+                id: id || '',
+                values: (values || []).map(format)
+            }, '*');
+        }
+
+        ['log', 'info', 'warn', 'error', 'debug'].forEach(function(level) {
+            var original = console[level];
+            console[level] = function() {
+                var args = Array.prototype.slice.call(arguments);
+                send(level === 'log' || level === 'debug' ? 'log' : level, args);
+                if (original) original.apply(console, args);
+            };
+        });
+
+        window.addEventListener('error', function(event) {
+            send('error', [event.message + (event.lineno ? ' (line ' + event.lineno + ')' : '')]);
+        });
+        window.addEventListener('unhandledrejection', function(event) {
+            send('error', ['Unhandled promise rejection:', event.reason]);
+        });
+        window.addEventListener('message', function(event) {
+            var message = event.data || {};
+            if (event.source !== parent || message.source !== 'liveweave-parent-console' || message.type !== 'evaluate') return;
+            try {
+                var result = (0, eval)(message.code);
+                Promise.resolve(result).then(function(value) {
+                    send('result', [value], message.id);
+                }, function(error) {
+                    send('error', [error], message.id);
+                });
+            } catch (error) {
+                send('error', [error], message.id);
+            }
+        });
+        send('ready', []);
+    })();</script>
+                <script>(function installPreviewLinkGuard() {
+        var noticeTimer;
+
+        function showNotice(message) {
+            var notice = document.getElementById('lw-preview-link-notice');
+            if (!notice) {
+                notice = document.createElement('div');
+                notice.id = 'lw-preview-link-notice';
+                notice.setAttribute('role', 'status');
+                notice.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:2147483647;max-width:calc(100% - 24px);padding:10px 14px;border-radius:9px;background:#17212d;color:#fff;font:13px/1.4 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);pointer-events:none;';
+                document.body.appendChild(notice);
+            }
+            notice.textContent = message;
+            notice.hidden = false;
+            clearTimeout(noticeTimer);
+            noticeTimer = setTimeout(function() { notice.hidden = true; }, 3500);
+        }
+
+        document.addEventListener('click', function(event) {
+            var link = event.target.closest && event.target.closest('a[href]');
+            if (!link || event.defaultPrevented) return;
+
+            var href = (link.getAttribute('href') || '').trim();
+            if (href.charAt(0) === '#') {
+                event.preventDefault();
+                var fragment = href.slice(1);
+                if (!fragment) {
+                    window.scrollTo(0, 0);
+                    return;
+                }
+                try { fragment = decodeURIComponent(fragment); } catch (error) {}
+                var target = document.getElementById(fragment) || document.getElementsByName(fragment)[0];
+                if (target) target.scrollIntoView();
+                return;
+            }
+
+            if (/^(https?:)?\/\//i.test(href)) {
+                event.preventDefault();
+                window.open(href, '_blank', 'noopener,noreferrer');
+                return;
+            }
+
+            if (/^(mailto:|tel:)/i.test(href)) return;
+
+            event.preventDefault();
+            showNotice('This page cannot be opened in the preview.');
+        }, true);
+    })();</script>
+                
+   
+
+<script src="https://cdn.jsdelivr.net/gh/digimarketingai/EZ-Globe.js/globe-bundle.js" defer=""></script>
+
+
+<script>
+        const DEMO_SPOTS = [
+            {
+                "name": "Giza Pyramid Complex",
+                "lat": 29.9772,
+                "lon": 31.1299,
+                "desc_en": "The Giza pyramid complex (also called the Giza necropolis) in Egypt is home to the Great Pyramid, the pyramid of Khafre, and the pyramid of Menkaure.",
+                "desc_zh": "位於埃及的吉薩金字塔群（亦稱吉薩墓地）內，坐落著大金字塔、卡夫拉金字塔以及孟卡拉金字塔。",
+                "image_url": "https://upload.wikimedia.org/wikipedia/commons/9/96/Pyramids_of_the_Giza_Necropolis.jpg"
+            },
+            {
+                "name": "Victoria Bay",
+                "lat": 22.2911,
+                "lon": 114.1679,
+                "desc_en": "Tsim Sha Tsui is a shopping and nightlife district in Kowloon. Casual eateries and eclectic local shops are packed along neon-lit Nathan Road, while luxury malls line nearby Canton Road. The Tsim Sha Tsui Promenade, on Victoria Harbour, is a popular spot to appreciate Hong Kong's skyline views, while mainstream concerts and musicals are performed at the Hong Kong Cultural Centre",
+                "desc_zh": "维多利亚港（Victoria Harbour）位于中国香港特别行政区香港岛与九龙半岛之间，东起鲤鱼门，西至青衣岛海域，水域面积约41.88平方公里，为天然深水港，位列世界三大天然良港",
+                "image_url": "https://lh3.googleusercontent.com/grass-cs/AABkmLePKyRYpp09EFh7S5eWQrMuq-QQFBNr1eKst5YTK1CWwnEp81otudFbzT5RzAdMWzJzuugg19o21n7h9Xzjfdudn0PvgudOP44uDG800dZj886wf000cHzO9AYcBNihiVk84Wnl=w507-h240-k-no"
+            },
+            {
+                "name": "Mount Everest",
+                "lat": 27.99,
+                "lon": 86.95,
+                "desc_en": "This iconic 29,029-foot mountain, the tallest peak on earth, draws many expert climbers",
+                "desc_zh": "珠穆朗玛峰，简称珠峰，岩面高程8844.43米，雪面高程8848.86米，是喜马拉雅山脉的主峰，位于中华人民共和国与尼泊尔边界上",
+                "image_url": "https://lh3.googleusercontent.com/grass-cs/AABkmLcSlVI_StnzULx9i_hEILdMUJ2NzTLcRnizQQ_rISqplu2cs7uE3mThj5ANxQdG95rj3DBWnsOaWHTb5pfdahISSJ2c3DZdQV21Lz7YbgDAjIuZJUsWAhXbUmjOWcLQMjztWrbbYEaoQV-p=w408-h306-k-no"
+            },
+            {
+                "name": "Tahiti",
+                "lat": -17.64,
+                "lon": -149.45,
+                "desc_en": "Volcanic mountains, waterfalls & black sand beaches on the largest island in French Polynesia",
+                "desc_zh": "大溪地，地處北太平洋的熱帶海島，被譽為世界上最接近天堂的度假勝地",
+                "image_url": "https://lh3.googleusercontent.com/grass-cs/AABkmLeYwPfHK8wfh0hcQsol_b8POHqZt4WTD1dquxEh63hhzTi6R_FqkRExKCpcxLReyvXFlKGUV90QcqPr36i9BarhByShl5puhRq2tY-q3z1gbY0q2Q46U_ZCfGcpFZ4eBkSS2osB=w408-h281-k-no"
+            },
+            {
+                "name": "Vantican City",
+                "lat": 41.9,
+                "lon": 12.4,
+                "desc_en": "Volcanic mountains, waterfalls & black sand beaches on the largest island in French Polynesia",
+                "desc_zh": "大溪地，地處北太平洋的熱帶海島，被譽為世界上最接近天堂的度假勝地",
+                "image_url": "https://lh3.googleusercontent.com/grass-cs/AABkmLcEOG1WQZnUP6t1iabtTNO0PDCFP31uDbGSoQrICRLAk8aGANCDDOEZzIUxe8g9onbSzVDlr78gOJTKbZqxcEN3eVlV4KlYiJZOzeKdCGPa3vLHPukKZBwx3bgiJ9rghfCydgw=w520-h240-k-no"
+            }
+        ]
+    </script>    
+
+
+
+
+
+
+                <script>// Write JavaScript here</script>
+            
+        
+    <div id="globe-container" style="width: 100%; height: 100%;"><canvas width="1872" height="940" style="display: block; width: 936px; height: 470px;"></canvas></div>
+      <div id="gl-ui-container">
+        <div id="gl-infoBox">
+          <div id="gl-closeButton">×</div>
+          <h3 id="gl-infoName"></h3>
+          <img id="gl-infoImage" src="" alt="Location Image">
+          <h4>Description</h4>
+          <p id="gl-infoDescEn"></p>
+          <h4>介绍</h4>
+          <p id="gl-infoDescZh"></p>
+        </div>
+        <div id="gl-resetButton">⟲</div>
+        
+        
+      </div>
+    </body>
